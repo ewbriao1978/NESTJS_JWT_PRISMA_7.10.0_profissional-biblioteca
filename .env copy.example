@@ -1,0 +1,9 @@
+# Copie este arquivo para ".env" e preencha com os SEUS valores.
+# String de conexao do Neon (painel do Neon > Connect > copie a URL)
+DATABASE_URL="postgresql://usuario:senha@host/database?sslmode=require"
+
+# Segredo usado para ASSINAR os tokens JWT (use algo longo e aleatorio)
+JWT_SECRET="troque_por_uma_chave_super_secreta"
+
+# Porta onde a API vai rodar
+PORT=3000

@@ -1,0 +1,61 @@
+### Arquivo de testes para a extensao "REST Client" (VS Code) ou Thunder Client.
+### Ordem sugerida: 1) register  2) login  3) copie o token em @token  4) demais rotas.
+
+@host = http://localhost:3000
+@token = COLE_AQUI_O_ACCESS_TOKEN
+
+### 1) Cadastrar usuario (publica)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{ "nome": "Ana", "email": "ana@email.com", "senha": "123456" }
+
+### 2) Login (publica) -> devolve access_token
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "ana@email.com", "senha": "123456" }
+
+### 3) Rota protegida SEM token -> deve dar 401
+GET {{host}}/livros
+
+### 4) Quem sou eu (token valido)
+GET {{host}}/auth/me
+Authorization: Bearer {{token}}
+
+### 5) Criar perfil 1:1 (usuarioId = 1). Repetir -> 409
+POST {{host}}/perfis
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "telefone": "53 99999-0000", "endereco": "Rio Grande/RS", "usuarioId": 1 }
+
+### 6) Criar livro (estoque negativo -> 400)
+POST {{host}}/livros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "titulo": "Dom Casmurro", "autor": "Machado de Assis", "isbn": "978-85-359-0277-5", "estoque": 2 }
+
+### 7) Listar / filtrar livros
+GET {{host}}/livros?titulo=dom
+Authorization: Bearer {{token}}
+
+### 8) Emprestar livro (usuarioId=1, livroId=1)
+POST {{host}}/emprestimos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "usuarioId": 1, "livroId": 1 }
+
+### 9) Devolver emprestimo 1
+PATCH {{host}}/emprestimos/1/devolver
+Authorization: Bearer {{token}}
+
+### 10) Relatorio avancado (4 tabelas)
+GET {{host}}/relatorios/emprestimos-detalhados?apenasAtivos=true
+Authorization: Bearer {{token}}
+
+### 11) Dashboard com totais
+GET {{host}}/relatorios/dashboard
+Authorization: Bearer {{token}}

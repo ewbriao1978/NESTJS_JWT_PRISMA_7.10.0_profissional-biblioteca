@@ -1,0 +1,13 @@
+# Dependencias e build
+node_modules/
+dist/
+
+# NUNCA suba o .env (tem senha do banco e segredo do JWT)
+.env
+
+# Client do Prisma e gerado por "npx prisma generate"
+src/generated/
+
+# Lixo de editor / sistema
+.DS_Store
+*.log

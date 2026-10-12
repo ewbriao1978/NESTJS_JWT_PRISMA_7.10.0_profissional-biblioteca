@@ -1,0 +1,89 @@
+// =============================================================================
+// prisma/schema.prisma  -  DESCRICAO DO BANCO DE DADOS
+// =============================================================================
+// Aqui descrevemos as tabelas como "models". O Prisma le este arquivo e:
+//   1) gera as migracoes SQL (npx prisma migrate dev)
+//   2) gera o client TypeScript com autocomplete (npx prisma generate)
+//
+// DER deste projeto (4 tabelas):
+//
+//   usuarios 1 ──── 1 perfis            (relacao 1:1)
+//   usuarios 1 ──── N emprestimos       (relacao 1:N)
+//   livros   1 ──── N emprestimos       (relacao 1:N)
+//   usuarios N ──── N livros            (relacao N:N, atraves de "emprestimos")
+//
+// Sobre o N:N: um usuario pega VARIOS livros e um livro e pego por VARIOS
+// usuarios. Em SQL isso exige uma tabela intermediaria. Aqui a tabela
+// "emprestimos" faz esse papel e ainda guarda dados proprios da relacao
+// (data do emprestimo e data da devolucao) - e a chamada N:N EXPLICITA.
+
+// ---- generator: ONDE e COMO gerar o client TypeScript -----------------------
+generator client {
+  // "prisma-client" e o gerador novo do Prisma 7 (o antigo era "prisma-client-js").
+  provider     = "prisma-client"
+  // O client agora e gerado DENTRO do nosso projeto (e nao em node_modules).
+  output       = "../src/generated/prisma"
+  // Formato dos modulos gerados: CommonJS (o mesmo do "require" que o Nest usa).
+  moduleFormat = "cjs"
+}
+
+// ---- datasource: QUAL banco -------------------------------------------------
+// So informamos o tipo. A URL fica no prisma.config.ts (novidade do Prisma 7).
+datasource db {
+  provider = "postgresql"
+}
+
+// ---- Tabela USUARIOS --------------------------------------------------------
+model Usuario {
+  id          Int          @id @default(autoincrement()) // chave primaria, auto-incremento
+  nome        String
+  email       String       @unique                        // nao pode repetir
+  senha       String                                      // guardamos o HASH do bcrypt, nunca a senha pura
+  perfil      Perfil?                                     // 1:1 -> o "?" diz que o usuario PODE nao ter perfil
+  emprestimos Emprestimo[]                                // 1:N -> um usuario tem uma LISTA de emprestimos
+
+  @@map("usuarios") // nome REAL da tabela no PostgreSQL
+}
+
+// ---- Tabela PERFIS (1:1 com usuarios) ---------------------------------------
+model Perfil {
+  id        Int     @id @default(autoincrement())
+  telefone  String? // "?" = opcional (aceita NULL)
+  endereco  String?
+
+  // Chave estrangeira. O @unique e o que transforma o 1:N em 1:1:
+  // como usuarioId nao pode repetir, cada usuario tem NO MAXIMO um perfil.
+  usuarioId Int     @unique
+  // onDelete: Cascade -> se o usuario for apagado, o perfil dele e apagado junto.
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfis")
+}
+
+// ---- Tabela LIVROS ----------------------------------------------------------
+// (Sem tabelas Autor/Categoria: aqui o autor e apenas um texto.)
+model Livro {
+  id          Int          @id @default(autoincrement())
+  titulo      String
+  autor       String
+  isbn        String?      @unique // opcional, mas se vier nao pode repetir
+  estoque     Int          @default(1) // quantas copias estao disponiveis
+  emprestimos Emprestimo[] // 1:N -> um livro aparece em varios emprestimos
+
+  @@map("livros")
+}
+
+// ---- Tabela EMPRESTIMOS (liga usuarios <-> livros: N:N) ---------------------
+model Emprestimo {
+  id             Int       @id @default(autoincrement())
+  dataEmprestimo DateTime  @default(now()) // preenchido sozinho com a data/hora atual
+  dataDevolucao  DateTime? // NULL = ainda nao devolvido
+
+  usuarioId Int
+  livroId   Int
+  // As duas chaves estrangeiras abaixo formam o N:N entre Usuario e Livro.
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  livro     Livro   @relation(fields: [livroId], references: [id])
+
+  @@map("emprestimos")
+}
